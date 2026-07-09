@@ -56,6 +56,14 @@ class ApiService {
 
   Future<void> honk(String vin) => _get('/horn/$vin/1');
 
+  Future<void> updateChargeControl(
+    String vin, {
+    required int hour,
+    required int minute,
+    required int percentage,
+  }) =>
+      _get('/charge_control?vin=$vin&hour=$hour&minute=$minute&percentage=$percentage');
+
   Future<List<Trip>> fetchTrips(String vin) async {
     if (useMockData) {
       return _mockTrips();

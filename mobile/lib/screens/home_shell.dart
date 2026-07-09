@@ -31,7 +31,7 @@ class _HomeShellState extends State<HomeShell> {
     final pages = [
       const DashboardScreen(vin: HomeShell.vin),
       const TripsScreen(vin: HomeShell.vin),
-      const ChargeScheduleScreen(),
+      const ChargeScheduleScreen(vin: HomeShell.vin),
       const AlertsScreen(),
     ];
 

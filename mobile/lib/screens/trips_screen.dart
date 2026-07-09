@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/trip.dart';
 import '../services/api_service.dart';
+import '../theme/app_theme.dart';
 
 const _weekdaysFr = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'];
 const _monthsFr = [
@@ -15,10 +16,7 @@ String _formatDateFr(DateTime date) {
   return '$weekday ${date.day} $month';
 }
 
-/// Historique des trajets + conso/coûts. Reste en données simulées : le
-/// format exact de `GET /vehicles/trips` n'a pas encore été confirmé avec un
-/// exemple réel (contrairement au statut véhicule), voir TODO dans
-/// ApiService.fetchTrips.
+/// Historique des trajets + conso/coûts, relié à `GET /vehicles/trips`.
 class TripsScreen extends StatefulWidget {
   const TripsScreen({super.key, required this.vin});
 
@@ -29,7 +27,7 @@ class TripsScreen extends StatefulWidget {
 }
 
 class _TripsScreenState extends State<TripsScreen> {
-  final _api = ApiService(useMockData: true);
+  final _api = ApiService(useMockData: const bool.fromEnvironment('USE_MOCK_DATA'));
   late Future<List<Trip>> _tripsFuture;
 
   @override
@@ -38,15 +36,23 @@ class _TripsScreenState extends State<TripsScreen> {
     _tripsFuture = _api.fetchTrips(widget.vin);
   }
 
+  void _refresh() => setState(() => _tripsFuture = _api.fetchTrips(widget.vin));
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Trajets')),
+      appBar: AppBar(
+        title: const Text('Trajets'),
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _refresh)],
+      ),
       body: FutureBuilder<List<Trip>>(
         future: _tripsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text('Erreur : ${snapshot.error}'));
           }
           final trips = snapshot.data ?? [];
           if (trips.isEmpty) {
@@ -61,7 +67,7 @@ class _TripsScreenState extends State<TripsScreen> {
             children: [
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(18),
                   child: Row(
                     children: [
                       Expanded(child: _SummaryStat(label: 'Trajets', value: '${trips.length}')),
@@ -76,12 +82,22 @@ class _TripsScreenState extends State<TripsScreen> {
                 Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
-                    leading: const Icon(Icons.route),
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceAlt,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.route, size: 18, color: AppColors.goldBright),
+                    ),
                     title: Text('${trip.distanceKm.toStringAsFixed(1)} km'),
                     subtitle: Text(_formatDateFr(trip.date)),
                     trailing: Text(
                       '${trip.costEuros.toStringAsFixed(2)} €\n${trip.consumptionKwh.toStringAsFixed(1)} kWh',
                       textAlign: TextAlign.right,
+                      style: const TextStyle(fontFamily: 'monospace', fontSize: 12.5),
                     ),
                   ),
                 ),
@@ -103,8 +119,12 @@ class _SummaryStat extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(value, style: Theme.of(context).textTheme.titleLarge),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        Text(
+          value,
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700, color: AppColors.paper),
+        ),
+        const SizedBox(height: 2),
+        Text(label, style: const TextStyle(fontSize: 11.5, color: AppColors.ashDim)),
       ],
     );
   }
