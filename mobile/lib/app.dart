@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'screens/login_screen.dart';
+import 'theme/app_theme.dart';
 
 class MyPeugeotApp extends StatelessWidget {
   const MyPeugeotApp({super.key});
@@ -9,12 +10,9 @@ class MyPeugeotApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'MyPeugeot',
-      theme: ThemeData(colorSchemeSeed: Colors.blue, useMaterial3: true),
-      darkTheme: ThemeData(
-        colorSchemeSeed: Colors.blue,
-        brightness: Brightness.dark,
-        useMaterial3: true,
-      ),
+      theme: buildAppTheme(),
+      darkTheme: buildAppTheme(),
+      themeMode: ThemeMode.dark,
       home: const LoginScreen(),
     );
   }

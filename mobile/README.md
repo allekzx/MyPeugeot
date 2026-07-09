@@ -1,16 +1,14 @@
 # App mobile (Flutter)
 
-Ce dossier contient uniquement le code source Dart (`lib/`, `pubspec.yaml`). Les dossiers de plateforme (`android/`, `ios/`) doivent être générés localement avec le SDK Flutter, indisponible dans cet environnement de développement à distance.
+App iOS/Android : dashboard sombre jaune/noir (clin d'œil au jaune de la e-208) avec verrouillage, charge, préconditionnement, historique de trajets, charge programmée et alertes/géofencing.
 
-## Mise en place (première fois)
+Les dossiers `android/` et `ios/` sont générés par `flutter create` et **versionnés** (seuls les artefacts de build sont ignorés, voir `.gitignore` local). Si tu repars d'un clone frais et qu'ils manquent, régénère-les :
 
 ```bash
 cd mobile
 flutter create --project-name mypeugeot .
 flutter pub get
 ```
-
-`flutter create .` sur un dossier qui a déjà un `pubspec.yaml` et un `lib/` ajoute les dossiers `android/`, `ios/`, etc. sans écraser le code existant.
 
 ## Configuration de l'URL du backend
 
@@ -26,19 +24,29 @@ flutter run --dart-define=API_BASE_URL=http://<ip-backend>:5000
 
 ```
 lib/
-  main.dart                    # point d'entrée
-  app.dart                     # MaterialApp + routes
+  main.dart                          # point d'entrée
+  app.dart                           # MaterialApp + thème
+  theme/
+    app_theme.dart                   # palette jaune/noir + ThemeData
   models/
-    vehicle_status.dart        # modèle de statut véhicule
+    vehicle_status.dart              # statut véhicule (batterie, verrouillage, charge)
+    trip.dart                        # trajet (distance, conso, coût)
   services/
-    api_service.dart           # client HTTP vers le backend
+    api_service.dart                 # client HTTP vers le backend
   screens/
-    login_screen.dart          # stub d'écran de connexion
-    dashboard_screen.dart      # statut véhicule + actions
+    login_screen.dart                # stub d'écran de connexion
+    home_shell.dart                  # bottom nav (Accueil/Trajets/Charge/Alertes)
+    dashboard_screen.dart            # vue équilibrée : hero voiture + statut + actions
+    trips_screen.dart                # historique trajets + conso/coûts
+    charge_schedule_screen.dart      # seuil de charge + heures creuses (stub)
+    alerts_screen.dart               # alerte mouvement + zones géofencing (stub)
   widgets/
-    battery_gauge.dart         # jauge de batterie réutilisable
+    battery_gauge.dart               # jauge de batterie réutilisable
+    car_hero.dart                    # illustration stylisée de la e-208 (CustomPainter, pas une photo)
 ```
 
 ## État actuel
 
-Écrans et service API sont des stubs fonctionnels avec des données simulées (`ApiService` en mode mock) pour permettre de développer l'UI avant que le backend soit branché. Prochaine étape : brancher `ApiService` sur les vraies routes exposées par `psa_car_controller` (voir `backend/README.md`).
+Écrans et service API sont des stubs fonctionnels avec des données simulées (`ApiService` en mode mock) pour développer l'UI avant que le backend soit branché. Validé avec `flutter analyze` et `flutter test` (aucune erreur, quelques infos de dépréciation mineures sur `withOpacity`).
+
+Prochaine étape : brancher `ApiService` sur les vraies routes exposées par `psa_car_controller` (voir `backend/README.md`), notamment pour les trajets, la programmation de charge et les alertes qui sont encore 100% côté client.

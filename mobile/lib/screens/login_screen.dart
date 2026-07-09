@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import 'dashboard_screen.dart';
+import '../theme/app_theme.dart';
+import 'home_shell.dart';
 
 /// Stub d'écran de connexion. La vraie authentification passera par le
 /// backend (session/token PSA géré côté serveur), pas directement par l'app.
@@ -17,7 +18,7 @@ class LoginScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.electric_car, size: 96),
+              const Icon(Icons.electric_car, size: 96, color: AppColors.yellow),
               const SizedBox(height: 16),
               const Text(
                 'Connexion au backend à venir.\nPour l\'instant, accès direct au dashboard (données simulées).',
@@ -27,7 +28,7 @@ class LoginScreen extends StatelessWidget {
               FilledButton(
                 onPressed: () {
                   Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (_) => const DashboardScreen()),
+                    MaterialPageRoute(builder: (_) => const HomeShell()),
                   );
                 },
                 child: const Text('Continuer'),

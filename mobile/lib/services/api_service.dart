@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../models/trip.dart';
 import '../models/vehicle_status.dart';
 
 /// Client HTTP vers le backend `psa_car_controller` auto-hébergé.
@@ -45,6 +46,18 @@ class ApiService {
 
   Future<void> preconditionCabin(String vin) => _postAction(vin, 'preconditioning/start');
 
+  Future<List<Trip>> fetchTrips(String vin) async {
+    if (useMockData) {
+      return _mockTrips();
+    }
+    final response = await http.get(Uri.parse('$baseUrl/api/vehicles/$vin/trips'));
+    if (response.statusCode != 200) {
+      throw ApiException('Échec de récupération des trajets (${response.statusCode})');
+    }
+    final list = jsonDecode(response.body) as List<dynamic>;
+    return list.map((e) => Trip.fromJson(e as Map<String, dynamic>)).toList();
+  }
+
   Future<void> _postAction(String vin, String action) async {
     if (useMockData) {
       return;
@@ -64,6 +77,16 @@ class ApiService {
       isCharging: false,
       updatedAt: DateTime.now(),
     );
+  }
+
+  List<Trip> _mockTrips() {
+    final now = DateTime.now();
+    return [
+      Trip(date: now.subtract(const Duration(days: 1)), distanceKm: 18.4, consumptionKwh: 3.1, costEuros: 0.65),
+      Trip(date: now.subtract(const Duration(days: 2)), distanceKm: 42.0, consumptionKwh: 7.6, costEuros: 1.60),
+      Trip(date: now.subtract(const Duration(days: 4)), distanceKm: 9.2, consumptionKwh: 1.8, costEuros: 0.38),
+      Trip(date: now.subtract(const Duration(days: 6)), distanceKm: 63.5, consumptionKwh: 11.2, costEuros: 2.35),
+    ];
   }
 }
 
