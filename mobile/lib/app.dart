@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/login_screen.dart';
+import 'screens/home_shell.dart';
 import 'theme/app_theme.dart';
 
 class MyPeugeotApp extends StatelessWidget {
@@ -13,7 +13,7 @@ class MyPeugeotApp extends StatelessWidget {
       theme: buildAppTheme(),
       darkTheme: buildAppTheme(),
       themeMode: ThemeMode.dark,
-      home: const LoginScreen(),
+      home: const HomeShell(),
     );
   }
 }
