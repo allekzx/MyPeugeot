@@ -8,10 +8,17 @@ import '../models/vehicle_status.dart';
 
 /// Client HTTP vers le backend `psa_car_controller` auto-hébergé.
 ///
-/// [useMockData] permet de développer l'UI avant d'avoir un backend
-/// joignable. Les routes ci-dessous sont indicatives : à confirmer contre
-/// `api_spec.md` de la version de psa_car_controller déployée (voir
-/// backend/README.md) et à ajuster ici.
+/// Routes confirmées depuis le code source de `psa_car_controller`
+/// (`psa_car_controller/web/view/api.py`, GET uniquement, paramètres dans
+/// l'URL) :
+///   - GET /get_vehicleinfo/<vin>?from_cache=0|1
+///   - GET /lock_door/<vin>/<0|1>
+///   - GET /charge_now/<vin>/<0|1>
+///   - GET /preconditioning/<vin>/<0|1>
+///   - GET /vehicles/trips (pas de vin dans l'URL, à confirmer si filtré côté
+///     serveur ou s'il faut filtrer côté client)
+///
+/// [useMockData] permet de développer l'UI sans backend joignable.
 class ApiService {
   ApiService({
     String? baseUrl,
@@ -25,46 +32,51 @@ class ApiService {
   final String baseUrl;
   final bool useMockData;
 
-  Future<VehicleStatus> fetchStatus(String vin) async {
+  Future<VehicleStatus> fetchStatus(String vin, {bool forceRefresh = false}) async {
     if (useMockData) {
       return _mockStatus(vin);
     }
-    final response = await http.get(Uri.parse('$baseUrl/api/vehicles/$vin/status'));
+    final fromCache = forceRefresh ? 0 : 1;
+    final response = await http.get(Uri.parse('$baseUrl/get_vehicleinfo/$vin?from_cache=$fromCache'));
     if (response.statusCode != 200) {
       throw ApiException('Échec de récupération du statut (${response.statusCode})');
     }
     return VehicleStatus.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
   }
 
-  Future<void> lockDoors(String vin) => _postAction(vin, 'lock');
+  Future<void> lockDoors(String vin) => _get('/lock_door/$vin/1');
 
-  Future<void> unlockDoors(String vin) => _postAction(vin, 'unlock');
+  Future<void> unlockDoors(String vin) => _get('/lock_door/$vin/0');
 
-  Future<void> startCharge(String vin) => _postAction(vin, 'charge/start');
+  Future<void> startCharge(String vin) => _get('/charge_now/$vin/1');
 
-  Future<void> stopCharge(String vin) => _postAction(vin, 'charge/stop');
+  Future<void> stopCharge(String vin) => _get('/charge_now/$vin/0');
 
-  Future<void> preconditionCabin(String vin) => _postAction(vin, 'preconditioning/start');
+  Future<void> preconditionCabin(String vin) => _get('/preconditioning/$vin/1');
 
   Future<List<Trip>> fetchTrips(String vin) async {
     if (useMockData) {
       return _mockTrips();
     }
-    final response = await http.get(Uri.parse('$baseUrl/api/vehicles/$vin/trips'));
+    // TODO: /vehicles/trips ne prend pas de vin dans les routes trouvées ;
+    // à vérifier si un filtrage par véhicule est nécessaire côté client une
+    // fois qu'on a un exemple réel de réponse.
+    final response = await http.get(Uri.parse('$baseUrl/vehicles/trips'));
     if (response.statusCode != 200) {
       throw ApiException('Échec de récupération des trajets (${response.statusCode})');
     }
-    final list = jsonDecode(response.body) as List<dynamic>;
+    final decoded = jsonDecode(response.body);
+    final list = decoded is List ? decoded : (decoded as Map<String, dynamic>)['trips'] as List<dynamic>? ?? [];
     return list.map((e) => Trip.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  Future<void> _postAction(String vin, String action) async {
+  Future<void> _get(String path) async {
     if (useMockData) {
       return;
     }
-    final response = await http.post(Uri.parse('$baseUrl/api/vehicles/$vin/$action'));
+    final response = await http.get(Uri.parse('$baseUrl$path'));
     if (response.statusCode != 200) {
-      throw ApiException('Action "$action" échouée (${response.statusCode})');
+      throw ApiException('Action "$path" échouée (${response.statusCode})');
     }
   }
 
