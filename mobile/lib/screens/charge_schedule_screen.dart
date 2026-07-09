@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/feedback_snackbar.dart';
 import '../widgets/section_label.dart';
 
 /// Programmation de charge : seuil cible + heures creuses, reliée à
@@ -51,15 +52,11 @@ class _ChargeScheduleScreenState extends State<ChargeScheduleScreen> {
         percentage: _targetPercent.round(),
       );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Programmation de charge enregistrée.')),
-        );
+        showActionFeedback(context, success: true, message: 'Programmation de charge envoyée.');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$e'), duration: const Duration(seconds: 8)),
-        );
+        showActionFeedback(context, success: false, message: '$e');
       }
     } finally {
       if (mounted) setState(() => _saving = false);

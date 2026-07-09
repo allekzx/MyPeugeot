@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/vehicle_status.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/feedback_snackbar.dart';
 import '../widgets/hero_photo.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -19,7 +20,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   final _api = ApiService(useMockData: const bool.fromEnvironment('USE_MOCK_DATA'));
   late Future<VehicleStatus> _statusFuture;
-  bool _actionInProgress = false;
+  String? _pendingAction;
 
   @override
   void initState() {
@@ -33,19 +34,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     });
   }
 
-  Future<void> _runAction(Future<void> Function() action) async {
-    setState(() => _actionInProgress = true);
+  Future<void> _runAction(String id, String successMessage, Future<void> Function() action) async {
+    setState(() => _pendingAction = id);
     try {
       await action();
       _refresh();
+      if (mounted) showActionFeedback(context, success: true, message: successMessage);
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('$e'), duration: const Duration(seconds: 8)),
-        );
-      }
+      if (mounted) showActionFeedback(context, success: false, message: '$e');
     } finally {
-      if (mounted) setState(() => _actionInProgress = false);
+      if (mounted) setState(() => _pendingAction = null);
     }
   }
 
@@ -77,7 +75,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'AUTONOMIE ESTIMÉE',
                       style: TextStyle(
                         fontSize: 11,
@@ -134,16 +132,24 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
                 child: _GlassActionTray(
-                  actionInProgress: _actionInProgress,
+                  pendingAction: _pendingAction,
                   status: status,
                   onLockToggle: () => _runAction(
+                    'lock',
+                    status.isLocked ? 'Déverrouillage envoyé.' : 'Verrouillage envoyé.',
                     () => status.isLocked ? _api.unlockDoors(widget.vin) : _api.lockDoors(widget.vin),
                   ),
-                  onPrecondition: () => _runAction(() => _api.preconditionCabin(widget.vin)),
+                  onPrecondition: () => _runAction(
+                    'climate',
+                    'Climatisation demandée.',
+                    () => _api.preconditionCabin(widget.vin),
+                  ),
                   onChargeToggle: () => _runAction(
+                    'charge',
+                    status.isCharging ? 'Arrêt de charge envoyé.' : 'Démarrage de charge envoyé.',
                     () => status.isCharging ? _api.stopCharge(widget.vin) : _api.startCharge(widget.vin),
                   ),
-                  onHorn: () => _runAction(() => _api.honk(widget.vin)),
+                  onHorn: () => _runAction('horn', 'Klaxon envoyé.', () => _api.honk(widget.vin)),
                 ),
               ),
               Padding(
@@ -160,7 +166,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
 class _GlassActionTray extends StatelessWidget {
   const _GlassActionTray({
-    required this.actionInProgress,
+    required this.pendingAction,
     required this.status,
     required this.onLockToggle,
     required this.onPrecondition,
@@ -168,7 +174,7 @@ class _GlassActionTray extends StatelessWidget {
     required this.onHorn,
   });
 
-  final bool actionInProgress;
+  final String? pendingAction;
   final VehicleStatus status;
   final VoidCallback onLockToggle;
   final VoidCallback onPrecondition;
@@ -177,6 +183,8 @@ class _GlassActionTray extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final busy = pendingAction != null;
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
       child: BackdropFilter(
@@ -194,21 +202,33 @@ class _GlassActionTray extends StatelessWidget {
                 child: _ActionTile(
                   icon: status.isLocked ? Icons.lock : Icons.lock_open,
                   label: status.isLocked ? 'Déverrouiller' : 'Verrouiller',
-                  onTap: actionInProgress ? null : onLockToggle,
+                  loading: pendingAction == 'lock',
+                  onTap: busy ? null : onLockToggle,
                 ),
               ),
               Expanded(
-                child: _ActionTile(icon: Icons.ac_unit, label: 'Climat.', onTap: actionInProgress ? null : onPrecondition),
+                child: _ActionTile(
+                  icon: Icons.ac_unit,
+                  label: 'Climat.',
+                  loading: pendingAction == 'climate',
+                  onTap: busy ? null : onPrecondition,
+                ),
               ),
               Expanded(
                 child: _ActionTile(
                   icon: Icons.bolt,
                   label: 'Charge',
-                  onTap: actionInProgress ? null : onChargeToggle,
+                  loading: pendingAction == 'charge',
+                  onTap: busy ? null : onChargeToggle,
                 ),
               ),
               Expanded(
-                child: _ActionTile(icon: Icons.campaign, label: 'Klaxon', onTap: actionInProgress ? null : onHorn),
+                child: _ActionTile(
+                  icon: Icons.campaign,
+                  label: 'Klaxon',
+                  loading: pendingAction == 'horn',
+                  onTap: busy ? null : onHorn,
+                ),
               ),
             ],
           ),
@@ -219,11 +239,12 @@ class _GlassActionTray extends StatelessWidget {
 }
 
 class _ActionTile extends StatelessWidget {
-  const _ActionTile({required this.icon, required this.label, required this.onTap});
+  const _ActionTile({required this.icon, required this.label, required this.onTap, this.loading = false});
 
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
+  final bool loading;
 
   @override
   Widget build(BuildContext context) {
@@ -242,7 +263,13 @@ class _ActionTile extends StatelessWidget {
                 color: Colors.white.withOpacity(0.03),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, size: 19, color: AppColors.goldBright),
+              child: loading
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.goldBright),
+                    )
+                  : Icon(icon, size: 19, color: AppColors.goldBright),
             ),
             const SizedBox(height: 7),
             Text(label, style: const TextStyle(fontSize: 10, color: AppColors.ash), textAlign: TextAlign.center),
