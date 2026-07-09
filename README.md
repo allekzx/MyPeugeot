@@ -70,13 +70,13 @@ flutter run --dart-define=API_BASE_URL=http://<ip-backend>:5000
 
 ## Hébergement en continu
 
-Backend déployé et testé avec une vraie e-208 (voir `backend/README.md`). Pour un usage réel sans dépendre d'un PC allumé en permanence : VM **Oracle Cloud "Always Free"** (gratuite à vie) + **Tailscale** pour que seul le téléphone puisse atteindre l'API — jamais exposée publiquement. Procédure complète dans `backend/README.md`.
+Backend déployé et testé avec une vraie e-208 (voir `backend/README.md`). Pour un usage réel sans dépendre d'un PC allumé en permanence : VM **Google Cloud `e2-micro`** (gratuite en permanence) + **Tailscale** pour que seul le téléphone puisse atteindre l'API — jamais exposée publiquement. Procédure complète dans `backend/README.md`.
 
 ## Prochaines étapes
 
 - [x] Déployer le backend et récupérer le VIN + un premier statut véhicule réel
 - [x] Confirmer les routes REST exposées par `psa_car_controller` et le format de `/get_vehicleinfo` ; `mobile/lib/services/api_service.dart` et `vehicle_status.dart` à jour
-- [ ] Déployer le backend en continu (Oracle Cloud + Tailscale) plutôt que sur un PC local
+- [ ] Déployer le backend en continu (Google Cloud `e2-micro` + Tailscale) plutôt que sur un PC local
 - [ ] Confirmer le format de `/vehicles/trips` (encore en mock) et le brancher
 - [ ] Fiabiliser le statut de verrouillage (`doors_state` revenu `null` sur le véhicule de test)
 - [ ] Brancher la programmation de charge et les alertes/géofencing sur le backend (actuellement 100% côté client)
