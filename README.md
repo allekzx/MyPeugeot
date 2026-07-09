@@ -68,10 +68,17 @@ flutter run --dart-define=API_BASE_URL=http://<ip-backend>:5000
 
 `android/` et `ios/` sont déjà générés et versionnés dans le dépôt. Voir `mobile/README.md` pour le détail de la structure et de la configuration.
 
+## Hébergement en continu
+
+Backend déployé et testé avec une vraie e-208 (voir `backend/README.md`). Pour un usage réel sans dépendre d'un PC allumé en permanence : VM **Oracle Cloud "Always Free"** (gratuite à vie) + **Tailscale** pour que seul le téléphone puisse atteindre l'API — jamais exposée publiquement. Procédure complète dans `backend/README.md`.
+
 ## Prochaines étapes
 
-- [ ] Valider le déploiement du backend et récupérer le VIN + un premier statut véhicule
-- [ ] Confirmer les routes exposées par la version de `psa_car_controller` déployée (`api_spec.md` du projet) et ajuster `mobile/lib/services/api_service.dart` en conséquence (statut, actions, trajets)
+- [x] Déployer le backend et récupérer le VIN + un premier statut véhicule réel
+- [x] Confirmer les routes REST exposées par `psa_car_controller` et le format de `/get_vehicleinfo` ; `mobile/lib/services/api_service.dart` et `vehicle_status.dart` à jour
+- [ ] Déployer le backend en continu (Oracle Cloud + Tailscale) plutôt que sur un PC local
+- [ ] Confirmer le format de `/vehicles/trips` (encore en mock) et le brancher
+- [ ] Fiabiliser le statut de verrouillage (`doors_state` revenu `null` sur le véhicule de test)
 - [ ] Brancher la programmation de charge et les alertes/géofencing sur le backend (actuellement 100% côté client)
 - [ ] Écran de connexion réel (au lieu du stub) relié au backend
 - [ ] Notifications push (Firebase Cloud Messaging)
