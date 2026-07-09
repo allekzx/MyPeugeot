@@ -1,8 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Le backend psa_car_controller auto-hébergé est exposé en HTTP (pas de
+         TLS) sur le réseau local/Tailscale : il faut autoriser le trafic en
+         clair, bloqué par défaut depuis Android 9 (API 28). -->
     <application
         android:label="mypeugeot"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:usesCleartextTraffic="true">
         <activity
             android:name=".MainActivity"
             android:exported="true"
