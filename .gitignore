@@ -1,0 +1,21 @@
+# Backend (secrets PSA, tokens de session)
+backend/config/
+backend/.env
+
+# Flutter/Dart (générés localement par `flutter create`)
+mobile/.dart_tool/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/.packages
+mobile/build/
+mobile/android/
+mobile/ios/
+mobile/linux/
+mobile/macos/
+mobile/windows/
+mobile/web/
+mobile/*.iml
+mobile/.idea/
+
+# OS
+.DS_Store

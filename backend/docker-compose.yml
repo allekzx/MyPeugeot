@@ -1,0 +1,11 @@
+services:
+  psa_car_controller:
+    image: flobz/psa_car_controller
+    container_name: psa_car_controller
+    restart: unless-stopped
+    ports:
+      - "${PSACC_PORT:-5000}:5000"
+    volumes:
+      - ./config:/config
+    environment:
+      - PSACC_CONFIG_DIR=/config
