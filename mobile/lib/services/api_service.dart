@@ -54,6 +54,8 @@ class ApiService {
 
   Future<void> preconditionCabin(String vin) => _get('/preconditioning/$vin/1');
 
+  Future<void> honk(String vin) => _get('/horn/$vin/1');
+
   Future<List<Trip>> fetchTrips(String vin) async {
     if (useMockData) {
       return _mockTrips();
@@ -83,11 +85,12 @@ class ApiService {
   VehicleStatus _mockStatus(String vin) {
     return VehicleStatus(
       vin: vin,
-      batteryLevelPercent: 72,
-      rangeKm: 210,
+      batteryLevelPercent: 74,
+      rangeKm: 240,
       isLocked: true,
       isCharging: false,
       updatedAt: DateTime.now(),
+      odometerKm: 42894,
     );
   }
 

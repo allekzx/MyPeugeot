@@ -18,7 +18,7 @@ class LoginScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.electric_car, size: 96, color: AppColors.yellow),
+              const Icon(Icons.electric_car, size: 96, color: AppColors.gold),
               const SizedBox(height: 16),
               const Text(
                 'Connexion au backend à venir.\nPour l\'instant, accès direct au dashboard (données simulées).',

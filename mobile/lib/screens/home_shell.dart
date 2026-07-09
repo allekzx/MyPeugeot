@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../widgets/app_bottom_nav.dart';
 import 'alerts_screen.dart';
 import 'charge_schedule_screen.dart';
 import 'dashboard_screen.dart';
@@ -18,6 +19,13 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
+  static const _items = [
+    NavItem(icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard, label: 'Accueil'),
+    NavItem(icon: Icons.route_outlined, selectedIcon: Icons.route, label: 'Trajets'),
+    NavItem(icon: Icons.bolt_outlined, selectedIcon: Icons.bolt, label: 'Charge'),
+    NavItem(icon: Icons.notifications_outlined, selectedIcon: Icons.notifications, label: 'Alertes'),
+  ];
+
   @override
   Widget build(BuildContext context) {
     final pages = [
@@ -29,15 +37,10 @@ class _HomeShellState extends State<HomeShell> {
 
     return Scaffold(
       body: pages[_index],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
-          NavigationDestination(icon: Icon(Icons.dashboard_outlined), selectedIcon: Icon(Icons.dashboard), label: 'Accueil'),
-          NavigationDestination(icon: Icon(Icons.route_outlined), selectedIcon: Icon(Icons.route), label: 'Trajets'),
-          NavigationDestination(icon: Icon(Icons.bolt_outlined), selectedIcon: Icon(Icons.bolt), label: 'Charge'),
-          NavigationDestination(icon: Icon(Icons.notifications_outlined), selectedIcon: Icon(Icons.notifications), label: 'Alertes'),
-        ],
+      bottomNavigationBar: AppBottomNav(
+        items: _items,
+        currentIndex: _index,
+        onTap: (i) => setState(() => _index = i),
       ),
     );
   }

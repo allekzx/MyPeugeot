@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
 
-/// Palette inspirée du jaune de la e-208, dans un esprit sombre et premium
-/// (contours noirs, bandes façon "racing stripes" — clin d'œil sympa au jaune
-/// vif de la voiture, sans reprendre d'élément de marque protégé).
+/// Palette "Jaune Faro" premium — noir chaud, jaune moutarde profond en
+/// accent, dans l'esprit des tableaux de bord Tesla/MySkoda.
 class AppColors {
-  static const background = Color(0xFF0B0B0D);
-  static const surface = Color(0xFF1A1A1E);
-  static const surfaceAlt = Color(0xFF232327);
-  static const yellow = Color(0xFFF2C230);
-  static const yellowDim = Color(0xFFB8901A);
-  static const stripe = Color(0xFF16161A);
+  static const background = Color(0xFF131110);
+  static const surface = Color(0xFF1D1916);
+  static const surfaceAlt = Color(0xFF262019);
+  static const line = Color(0xFF35302A);
+  static const gold = Color(0xFFD2A02A);
+  static const goldBright = Color(0xFFF0C34C);
+  static const goldDim = Color(0xFF8A6C1F);
+  static const paper = Color(0xFFF4EFE4);
+  static const ash = Color(0xFF9C9284);
+  static const ashDim = Color(0xFF6B6459);
   static const danger = Color(0xFFE5484D);
-  static const success = Color(0xFF3DCB6C);
+  static const success = Color(0xFF5FAE72);
 }
 
 ThemeData buildAppTheme() {
   final base = ThemeData(
     brightness: Brightness.dark,
     colorScheme: ColorScheme.fromSeed(
-      seedColor: AppColors.yellow,
+      seedColor: AppColors.gold,
       brightness: Brightness.dark,
       surface: AppColors.surface,
     ),
@@ -29,58 +32,45 @@ ThemeData buildAppTheme() {
   return base.copyWith(
     appBarTheme: const AppBarTheme(
       backgroundColor: AppColors.background,
-      foregroundColor: Colors.white,
+      foregroundColor: AppColors.paper,
       elevation: 0,
       centerTitle: false,
     ),
     cardTheme: CardThemeData(
       color: AppColors.surface,
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: const BorderSide(color: AppColors.line),
+      ),
       margin: EdgeInsets.zero,
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        backgroundColor: AppColors.yellow,
-        foregroundColor: Colors.black,
-        textStyle: const TextStyle(fontWeight: FontWeight.w600),
+        backgroundColor: AppColors.goldBright,
+        foregroundColor: AppColors.background,
+        textStyle: const TextStyle(fontWeight: FontWeight.w700),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        foregroundColor: AppColors.yellow,
-        side: const BorderSide(color: AppColors.yellowDim),
+        foregroundColor: AppColors.goldBright,
+        side: const BorderSide(color: AppColors.goldDim),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       ),
     ),
-    navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: AppColors.surface,
-      indicatorColor: AppColors.yellow.withOpacity(0.18),
-      labelTextStyle: WidgetStateProperty.resolveWith((states) {
-        final selected = states.contains(WidgetState.selected);
-        return TextStyle(
-          color: selected ? AppColors.yellow : Colors.white70,
-          fontSize: 12,
-          fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-        );
-      }),
-      iconTheme: WidgetStateProperty.resolveWith((states) {
-        final selected = states.contains(WidgetState.selected);
-        return IconThemeData(color: selected ? AppColors.yellow : Colors.white70);
-      }),
-    ),
     switchTheme: SwitchThemeData(
       thumbColor: const WidgetStatePropertyAll(Colors.white),
       trackColor: WidgetStateProperty.resolveWith((states) {
-        return states.contains(WidgetState.selected) ? AppColors.yellow : AppColors.surfaceAlt;
+        return states.contains(WidgetState.selected) ? AppColors.gold : AppColors.surfaceAlt;
       }),
     ),
     textTheme: base.textTheme.apply(
-      bodyColor: Colors.white,
-      displayColor: Colors.white,
+      bodyColor: AppColors.paper,
+      displayColor: AppColors.paper,
     ),
   );
 }

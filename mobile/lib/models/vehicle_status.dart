@@ -5,6 +5,7 @@ class VehicleStatus {
   final bool isLocked;
   final bool isCharging;
   final DateTime updatedAt;
+  final int? odometerKm;
 
   const VehicleStatus({
     required this.vin,
@@ -13,6 +14,7 @@ class VehicleStatus {
     required this.isLocked,
     required this.isCharging,
     required this.updatedAt,
+    this.odometerKm,
   });
 
   /// Parsing de la réponse `GET /get_vehicleinfo/<vin>` de psa_car_controller
@@ -36,6 +38,7 @@ class VehicleStatus {
     }
     electric ??= energyList.isNotEmpty ? energyList.first as Map<String, dynamic> : null;
     final charging = electric?['charging'] as Map<String, dynamic>?;
+    final odometer = json['timed_odometer'] as Map<String, dynamic>?;
 
     return VehicleStatus(
       vin: vin,
@@ -44,6 +47,7 @@ class VehicleStatus {
       isLocked: _parseLocked(json['doors_state']),
       isCharging: (charging?['status'] as String?)?.toLowerCase() == 'inprogress',
       updatedAt: DateTime.tryParse((electric?['updated_at'] as String?) ?? '') ?? DateTime.now(),
+      odometerKm: (odometer?['mileage'] as num?)?.round(),
     );
   }
 
