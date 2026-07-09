@@ -4,6 +4,7 @@ import '../widgets/app_bottom_nav.dart';
 import 'alerts_screen.dart';
 import 'charge_schedule_screen.dart';
 import 'dashboard_screen.dart';
+import 'map_screen.dart';
 import 'trips_screen.dart';
 
 /// Coquille de navigation principale (bottom nav) une fois "connecté".
@@ -23,6 +24,7 @@ class _HomeShellState extends State<HomeShell> {
     NavItem(icon: Icons.dashboard_outlined, selectedIcon: Icons.dashboard, label: 'Accueil'),
     NavItem(icon: Icons.route_outlined, selectedIcon: Icons.route, label: 'Trajets'),
     NavItem(icon: Icons.bolt_outlined, selectedIcon: Icons.bolt, label: 'Charge'),
+    NavItem(icon: Icons.place_outlined, selectedIcon: Icons.place, label: 'Carte'),
     NavItem(icon: Icons.notifications_outlined, selectedIcon: Icons.notifications, label: 'Alertes'),
   ];
 
@@ -32,6 +34,7 @@ class _HomeShellState extends State<HomeShell> {
       const DashboardScreen(vin: HomeShell.vin),
       const TripsScreen(vin: HomeShell.vin),
       const ChargeScheduleScreen(vin: HomeShell.vin),
+      const MapScreen(vin: HomeShell.vin),
       const AlertsScreen(),
     ];
 

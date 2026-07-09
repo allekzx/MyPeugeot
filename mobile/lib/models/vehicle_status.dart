@@ -6,6 +6,9 @@ class VehicleStatus {
   final bool isCharging;
   final DateTime updatedAt;
   final int? odometerKm;
+  final double? latitude;
+  final double? longitude;
+  final DateTime? positionUpdatedAt;
 
   const VehicleStatus({
     required this.vin,
@@ -15,7 +18,12 @@ class VehicleStatus {
     required this.isCharging,
     required this.updatedAt,
     this.odometerKm,
+    this.latitude,
+    this.longitude,
+    this.positionUpdatedAt,
   });
+
+  bool get hasPosition => latitude != null && longitude != null;
 
   /// Parsing de la réponse `GET /get_vehicleinfo/<vin>` de psa_car_controller
   /// (objet `Status` de l'API PSA connected_car v4, confirmé sur une e-208
@@ -40,6 +48,12 @@ class VehicleStatus {
     final charging = electric?['charging'] as Map<String, dynamic>?;
     final odometer = json['timed_odometer'] as Map<String, dynamic>?;
 
+    // GeoJSON Feature/Point : coordinates = [longitude, latitude, altitude].
+    final position = json['last_position'] as Map<String, dynamic>?;
+    final geometry = position?['geometry'] as Map<String, dynamic>?;
+    final coordinates = geometry?['coordinates'] as List<dynamic>?;
+    final positionProps = position?['properties'] as Map<String, dynamic>?;
+
     return VehicleStatus(
       vin: vin,
       batteryLevelPercent: (electric?['level'] as num?)?.round() ?? 0,
@@ -48,6 +62,9 @@ class VehicleStatus {
       isCharging: (charging?['status'] as String?)?.toLowerCase() == 'inprogress',
       updatedAt: DateTime.tryParse((electric?['updated_at'] as String?) ?? '') ?? DateTime.now(),
       odometerKm: (odometer?['mileage'] as num?)?.round(),
+      longitude: coordinates != null && coordinates.isNotEmpty ? (coordinates[0] as num?)?.toDouble() : null,
+      latitude: coordinates != null && coordinates.length > 1 ? (coordinates[1] as num?)?.toDouble() : null,
+      positionUpdatedAt: DateTime.tryParse((positionProps?['updated_at'] as String?) ?? ''),
     );
   }
 

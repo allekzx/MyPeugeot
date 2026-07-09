@@ -115,6 +115,9 @@ class ApiService {
       isCharging: false,
       updatedAt: DateTime.now(),
       odometerKm: 42894,
+      latitude: 48.8584,
+      longitude: 2.2945,
+      positionUpdatedAt: DateTime.now().subtract(const Duration(minutes: 12)),
     );
   }
 

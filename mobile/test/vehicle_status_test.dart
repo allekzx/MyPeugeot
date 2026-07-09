@@ -35,7 +35,19 @@ void main() {
       "environment": {},
       "ignition": {"type": "Stop"},
       "kinetic": {},
-      "last_position": {},
+      "last_position": {
+        "type": "Feature",
+        "geometry": {
+          "coordinates": [2.2945, 48.8584, 1093.0],
+          "type": "Point"
+        },
+        "properties": {
+          "heading": 341.0,
+          "signal_quality": 9.0,
+          "type": "Acquire",
+          "updated_at": "2026-06-08 16:50:01+00:00"
+        }
+      },
       "preconditionning": {
         "air_conditioning": {"status": "Disabled"}
       },
@@ -53,5 +65,9 @@ void main() {
     expect(status.isCharging, isFalse);
     expect(status.isLocked, isTrue); // doors_state absent -> valeur par défaut
     expect(status.updatedAt, DateTime.parse('2026-07-08 15:49:03+00:00'));
+    expect(status.hasPosition, isTrue);
+    expect(status.longitude, 2.2945);
+    expect(status.latitude, 48.8584);
+    expect(status.positionUpdatedAt, DateTime.parse('2026-06-08 16:50:01+00:00'));
   });
 }
