@@ -9,8 +9,7 @@ import 'trips_screen.dart';
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
-  // TODO: mettre le vrai VIN une fois le backend configuré (voir backend/README.md).
-  static const vin = 'VFXXXXXXXXXXXXXXX';
+  static const vin = 'FAKEVIN0000000001';
 
   @override
   State<HomeShell> createState() => _HomeShellState();

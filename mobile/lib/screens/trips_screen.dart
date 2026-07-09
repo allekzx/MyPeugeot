@@ -15,8 +15,10 @@ String _formatDateFr(DateTime date) {
   return '$weekday ${date.day} $month';
 }
 
-/// Historique des trajets + conso/coûts. Données simulées pour l'instant
-/// (voir ApiService.fetchTrips) en attendant le branchement au backend.
+/// Historique des trajets + conso/coûts. Reste en données simulées : le
+/// format exact de `GET /vehicles/trips` n'a pas encore été confirmé avec un
+/// exemple réel (contrairement au statut véhicule), voir TODO dans
+/// ApiService.fetchTrips.
 class TripsScreen extends StatefulWidget {
   const TripsScreen({super.key, required this.vin});
 

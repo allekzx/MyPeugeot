@@ -15,7 +15,7 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final _api = ApiService(useMockData: true);
+  final _api = ApiService(useMockData: const bool.fromEnvironment('USE_MOCK_DATA'));
   late Future<VehicleStatus> _statusFuture;
   bool _actionInProgress = false;
 

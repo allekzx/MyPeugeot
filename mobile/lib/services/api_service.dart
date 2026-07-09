@@ -41,7 +41,7 @@ class ApiService {
     if (response.statusCode != 200) {
       throw ApiException('Échec de récupération du statut (${response.statusCode})');
     }
-    return VehicleStatus.fromJson(jsonDecode(response.body) as Map<String, dynamic>);
+    return VehicleStatus.fromJson(vin, jsonDecode(response.body) as Map<String, dynamic>);
   }
 
   Future<void> lockDoors(String vin) => _get('/lock_door/$vin/1');

@@ -15,16 +15,17 @@ class VehicleStatus {
     required this.updatedAt,
   });
 
-  /// Parsing best-effort de la réponse `GET /get_vehicleinfo/<vin>` de
-  /// psa_car_controller (objet `Status` de l'API PSA connected_car v4,
-  /// sérialisé en JSON). Le niveau de batterie/autonomie vient de l'entrée
-  /// `energy` de type "Electric" (cf. `car.status.get_energy('Electric')`
-  /// dans psa_client.py). Le statut de verrouillage (`doors_state`) n'a pas
-  /// pu être confirmé avec un exemple réel : à ajuster une fois qu'on a une
-  /// vraie réponse du backend (voir TODO ci-dessous).
-  factory VehicleStatus.fromJson(Map<String, dynamic> json) {
-    final status = (json['status'] as Map<String, dynamic>?) ?? json;
-    final energyList = (status['energy'] as List<dynamic>?) ?? const [];
+  /// Parsing de la réponse `GET /get_vehicleinfo/<vin>` de psa_car_controller
+  /// (objet `Status` de l'API PSA connected_car v4, confirmé sur une e-208
+  /// réelle). Le batterie/autonomie vient de l'entrée `energy` de type
+  /// "Electric". La réponse ne contient pas le VIN : on le passe séparément
+  /// (c'est nous qui l'avons demandé dans l'URL).
+  ///
+  /// `doors_state` est revenu `null` sur le véhicule de test : le
+  /// verrouillage n'est donc pas fiable via ce endpoint pour l'instant et
+  /// reste à `true` par défaut (voir _parseLocked).
+  factory VehicleStatus.fromJson(String vin, Map<String, dynamic> json) {
+    final energyList = (json['energy'] as List<dynamic>?) ?? const [];
     Map<String, dynamic>? electric;
     for (final entry in energyList) {
       final map = entry as Map<String, dynamic>;
@@ -37,17 +38,12 @@ class VehicleStatus {
     final charging = electric?['charging'] as Map<String, dynamic>?;
 
     return VehicleStatus(
-      vin: (json['vin'] ?? json['id'] ?? '') as String,
-      batteryLevelPercent: (electric?['level'] as num?)?.toInt() ?? 0,
-      rangeKm: (electric?['autonomy'] as num?)?.toInt() ?? 0,
-      // TODO: confirmer le champ réel de verrouillage (doors_state) contre
-      // une vraie réponse du backend. Verrouillé par défaut en attendant.
-      isLocked: _parseLocked(status['doors_state']),
+      vin: vin,
+      batteryLevelPercent: (electric?['level'] as num?)?.round() ?? 0,
+      rangeKm: (electric?['autonomy'] as num?)?.round() ?? 0,
+      isLocked: _parseLocked(json['doors_state']),
       isCharging: (charging?['status'] as String?)?.toLowerCase() == 'inprogress',
-      updatedAt: DateTime.tryParse(
-            (electric?['updated_at'] ?? electric?['updatedAt'] ?? json['updatedAt'] ?? '') as String? ?? '',
-          ) ??
-          DateTime.now(),
+      updatedAt: DateTime.tryParse((electric?['updated_at'] as String?) ?? '') ?? DateTime.now(),
     );
   }
 
