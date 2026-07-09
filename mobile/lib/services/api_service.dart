@@ -80,13 +80,29 @@ class ApiService {
     return list.map((e) => Trip.fromJson(e as Map<String, dynamic>)).toList();
   }
 
+  /// GET générique pour les actions véhicule. `psa_car_controller` répond
+  /// parfois 200 avec un message d'erreur/rate-limit *dans* le corps JSON
+  /// plutôt qu'avec un code HTTP d'erreur — on inspecte donc aussi le corps
+  /// pour ne pas afficher un faux succès quand la voiture a en fait refusé
+  /// la commande (cf. commandes PSA connues pour être peu fiables :
+  /// github.com/flobz/psa_car_controller/issues/1162).
   Future<void> _get(String path) async {
     if (useMockData) {
       return;
     }
     final response = await http.get(Uri.parse('$baseUrl$path'));
     if (response.statusCode != 200) {
-      throw ApiException('Action "$path" échouée (${response.statusCode})');
+      throw ApiException('Action "$path" échouée (${response.statusCode}) : ${response.body}');
+    }
+    final lower = response.body.toLowerCase();
+    final looksLikeError = lower.contains('"error"') ||
+        lower.contains('ratelimit') ||
+        lower.contains('rate limit') ||
+        lower.contains('exception') ||
+        lower.contains('"success":false') ||
+        lower.contains('failed');
+    if (looksLikeError) {
+      throw ApiException('Le véhicule a refusé la commande : ${response.body}');
     }
   }
 

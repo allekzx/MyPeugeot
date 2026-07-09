@@ -57,7 +57,9 @@ class _ChargeScheduleScreenState extends State<ChargeScheduleScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$e'), duration: const Duration(seconds: 8)),
+        );
       }
     } finally {
       if (mounted) setState(() => _saving = false);
