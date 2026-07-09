@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_theme.dart';
+import '../widgets/section_label.dart';
 
 class _GeofenceZone {
   _GeofenceZone({required this.name, required this.enabled});
@@ -53,27 +54,56 @@ class _AlertsScreenState extends State<AlertsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final activeCount = _zones.where((z) => z.enabled).length + (_movementAlert ? 1 : 0);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Alertes')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Card(
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
+                children: [
+                  const IconBadge(Icons.shield_moon_outlined, size: 52, iconSize: 24),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '$activeCount alerte${activeCount > 1 ? 's' : ''} active${activeCount > 1 ? 's' : ''}',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.paper),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '${_zones.length} zone${_zones.length > 1 ? 's' : ''} configurée${_zones.length > 1 ? 's' : ''}',
+                          style: const TextStyle(fontSize: 12.5, color: AppColors.ashDim),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          const SectionLabel('Surveillance'),
+          const SizedBox(height: 8),
+          Card(
             child: SwitchListTile(
-              secondary: const Icon(Icons.warning_amber_rounded, color: AppColors.goldBright),
-              title: const Text('Alerte mouvement suspect'),
+              secondary: const IconBadge(Icons.warning_amber_rounded),
+              title: const Text('Mouvement suspect'),
               subtitle: const Text('Notification si la voiture démarre sans ton téléphone à proximité'),
               value: _movementAlert,
               onChanged: (v) => setState(() => _movementAlert = v),
             ),
           ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Text('Zones géofencing', style: Theme.of(context).textTheme.titleMedium),
-              const Spacer(),
-              Text('local', style: TextStyle(fontSize: 11, color: AppColors.ashDim)),
-            ],
+          const SizedBox(height: 20),
+          SectionLabel(
+            'Zones géofencing',
+            trailing: Text('local', style: const TextStyle(fontSize: 11, color: AppColors.ashDim)),
           ),
           const SizedBox(height: 8),
           Card(
@@ -81,21 +111,21 @@ class _AlertsScreenState extends State<AlertsScreen> {
               children: [
                 for (final zone in _zones)
                   SwitchListTile(
-                    secondary: const Icon(Icons.location_on_outlined, color: AppColors.goldBright),
+                    secondary: const IconBadge(Icons.location_on_outlined),
                     title: Text(zone.name),
                     subtitle: const Text('Alerte si la voiture entre/sort de cette zone'),
                     value: zone.enabled,
                     onChanged: (v) => setState(() => zone.enabled = v),
                   ),
                 ListTile(
-                  leading: const Icon(Icons.add_circle_outline, color: AppColors.goldBright),
+                  leading: const IconBadge(Icons.add_circle_outline),
                   title: const Text('Ajouter une zone'),
                   onTap: _addZone,
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 4),
             child: Text(

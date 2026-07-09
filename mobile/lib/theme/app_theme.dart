@@ -35,6 +35,12 @@ ThemeData buildAppTheme() {
       foregroundColor: AppColors.paper,
       elevation: 0,
       centerTitle: false,
+      titleTextStyle: TextStyle(
+        color: AppColors.paper,
+        fontSize: 20,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -0.3,
+      ),
     ),
     cardTheme: CardThemeData(
       color: AppColors.surface,
@@ -68,6 +74,21 @@ ThemeData buildAppTheme() {
         return states.contains(WidgetState.selected) ? AppColors.gold : AppColors.surfaceAlt;
       }),
     ),
+    sliderTheme: SliderThemeData(
+      activeTrackColor: AppColors.goldBright,
+      inactiveTrackColor: AppColors.surfaceAlt,
+      thumbColor: AppColors.goldBright,
+      overlayColor: AppColors.goldBright.withOpacity(0.15),
+      valueIndicatorColor: AppColors.goldBright,
+      valueIndicatorTextStyle: const TextStyle(color: AppColors.background, fontWeight: FontWeight.w700),
+      trackHeight: 4,
+    ),
+    listTileTheme: const ListTileThemeData(
+      iconColor: AppColors.goldBright,
+      titleTextStyle: TextStyle(color: AppColors.paper, fontSize: 14.5, fontWeight: FontWeight.w600),
+      subtitleTextStyle: TextStyle(color: AppColors.ashDim, fontSize: 12),
+    ),
+    dividerColor: AppColors.line,
     textTheme: base.textTheme.apply(
       bodyColor: AppColors.paper,
       displayColor: AppColors.paper,

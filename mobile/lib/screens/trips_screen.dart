@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/trip.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/section_label.dart';
 
 const _weekdaysFr = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'];
 const _monthsFr = [
@@ -61,6 +62,7 @@ class _TripsScreenState extends State<TripsScreen> {
 
           final totalCost = trips.fold<double>(0, (sum, t) => sum + t.costEuros);
           final totalKwh = trips.fold<double>(0, (sum, t) => sum + t.consumptionKwh);
+          final chronological = trips.reversed.toList();
 
           return ListView(
             padding: const EdgeInsets.all(16),
@@ -78,32 +80,95 @@ class _TripsScreenState extends State<TripsScreen> {
                 ),
               ),
               const SizedBox(height: 16),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SectionLabel('Distance par trajet'),
+                      const SizedBox(height: 14),
+                      _DistanceChart(trips: chronological),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const SectionLabel('Historique'),
+              const SizedBox(height: 8),
               for (final trip in trips)
                 Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
-                    leading: Container(
-                      width: 40,
-                      height: 40,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceAlt,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.route, size: 18, color: AppColors.goldBright),
-                    ),
+                    leading: const IconBadge(Icons.route),
                     title: Text('${trip.distanceKm.toStringAsFixed(1)} km'),
                     subtitle: Text(_formatDateFr(trip.date)),
                     trailing: Text(
                       '${trip.costEuros.toStringAsFixed(2)} €\n${trip.consumptionKwh.toStringAsFixed(1)} kWh',
                       textAlign: TextAlign.right,
-                      style: const TextStyle(fontFamily: 'monospace', fontSize: 12.5),
+                      style: const TextStyle(fontFamily: 'monospace', fontSize: 12.5, color: AppColors.paper),
                     ),
                   ),
                 ),
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _DistanceChart extends StatelessWidget {
+  const _DistanceChart({required this.trips});
+
+  final List<Trip> trips;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxDistance = trips.map((t) => t.distanceKm).reduce((a, b) => a > b ? a : b);
+    return SizedBox(
+      height: 108,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (final trip in trips)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      trip.distanceKm.toStringAsFixed(0),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 10, fontFamily: 'monospace', color: AppColors.ashDim),
+                    ),
+                    const SizedBox(height: 4),
+                    ClipRRect(
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                      child: Container(
+                        height: 8 + (trip.distanceKm / maxDistance) * 48,
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.bottomCenter,
+                            end: Alignment.topCenter,
+                            colors: [AppColors.goldDim, AppColors.goldBright],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _weekdaysFr[trip.date.weekday - 1],
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 9.5, color: AppColors.ashDim),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

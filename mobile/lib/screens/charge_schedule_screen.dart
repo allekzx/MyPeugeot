@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import '../widgets/section_label.dart';
 
 /// Programmation de charge : seuil cible + heures creuses, reliée à
 /// `GET /charge_control` (route confirmée côté backend).
@@ -71,7 +72,7 @@ class _ChargeScheduleScreenState extends State<ChargeScheduleScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           _ChargeRing(current: widget.currentLevelPercent, target: _targetPercent.round()),
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Slider(
             value: _targetPercent,
             min: 50,
@@ -80,11 +81,14 @@ class _ChargeScheduleScreenState extends State<ChargeScheduleScreen> {
             label: '${_targetPercent.round()} %',
             onChanged: (v) => setState(() => _targetPercent = v),
           ),
+          const SizedBox(height: 16),
+          const SectionLabel('Programmation'),
           const SizedBox(height: 8),
           Card(
             child: Column(
               children: [
                 SwitchListTile(
+                  secondary: const IconBadge(Icons.nightlight_round),
                   title: const Text('Charger aux heures creuses'),
                   subtitle: const Text('Décale le démarrage de la charge sur la plage définie'),
                   value: _offPeakEnabled,
@@ -92,15 +96,15 @@ class _ChargeScheduleScreenState extends State<ChargeScheduleScreen> {
                 ),
                 if (_offPeakEnabled) ...[
                   ListTile(
-                    leading: const Icon(Icons.bedtime_outlined),
+                    leading: const IconBadge(Icons.bedtime_outlined),
                     title: const Text('Début'),
-                    trailing: Text(_startTime.format(context)),
+                    trailing: Text(_startTime.format(context), style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w600, color: AppColors.paper)),
                     onTap: () => _pickTime(true),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.wb_sunny_outlined),
+                    leading: const IconBadge(Icons.wb_sunny_outlined),
                     title: const Text('Fin'),
-                    trailing: Text(_endTime.format(context)),
+                    trailing: Text(_endTime.format(context), style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.w600, color: AppColors.paper)),
                     onTap: () => _pickTime(false),
                   ),
                 ],
