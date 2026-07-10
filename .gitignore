@@ -1,6 +1,8 @@
 # Backend (secrets PSA, tokens de session)
 backend/config/
 backend/.env
+__pycache__/
+*.pyc
 
 # Flutter/Dart : voir mobile/.gitignore (généré par `flutter create`) pour le
 # détail par plateforme (android/, ios/, etc. sont versionnés, seuls les

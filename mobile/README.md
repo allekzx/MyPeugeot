@@ -14,10 +14,14 @@ flutter pub get
 
 L'URL du backend (`backend/` du dépôt, déployé sur ton Raspberry Pi/serveur) est à renseigner dans `lib/services/api_service.dart` (constante `baseUrl`), ou à passer au build via `--dart-define=API_BASE_URL=https://mon-backend:5000`.
 
+Le service d'alertes mouvement/géofencing (`backend/alert_watcher`, port `5050`) est séparé de `psa_car_controller` (port `5000`) : son URL se configure via `--dart-define=ALERTS_BASE_URL=http://<ip-backend>:5050`.
+
 ## Lancer l'app
 
 ```bash
-flutter run --dart-define=API_BASE_URL=http://<ip-backend>:5000
+flutter run \
+  --dart-define=API_BASE_URL=http://<ip-backend>:5000 \
+  --dart-define=ALERTS_BASE_URL=http://<ip-backend>:5050
 ```
 
 ## Structure

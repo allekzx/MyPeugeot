@@ -16,6 +16,31 @@ docker compose logs -f   # vérifier que le service démarre correctement
 2. Suivre les instructions du projet `psa_car_controller` pour créer une app développeur PSA (client_id/client_secret) et se connecter avec ton compte PSA/Stellantis. Ces identifiants sont stockés uniquement côté serveur, dans `backend/config/` (jamais dans l'app mobile).
 3. Une fois configuré, récupérer le VIN de ta e-208 depuis le dashboard : c'est l'identifiant utilisé pour les appels à l'API véhicule.
 
+## Alertes mouvement / géofencing (`alert_watcher`)
+
+Un second petit service, `alert_watcher`, tourne à côté de `psa_car_controller` (même VM, même `docker compose up`) et surveille en continu le statut de la voiture pour détecter :
+- un **démarrage** (mouvement suspect) ;
+- une **entrée/sortie de zone** (géofencing, ex: "la voiture a quitté Domicile").
+
+Il notifie via [ntfy.sh](https://ntfy.sh) : un service de notifications push gratuit, sans compte, sans clé API. C'est nécessaire pour que les alertes marchent vraiment même téléphone verrouillé/app fermée — un simple sondage depuis l'app mobile ne serait pas fiable en arrière-plan (surtout sur iOS).
+
+### Configuration
+1. Dans `.env`, renseigner `VIN=<le VIN de ta voiture>` (déjà nécessaire pour le reste).
+2. Installer l'app **ntfy** ([Android](https://play.google.com/store/apps/details?id=io.heckel.ntfy) / [iOS](https://apps.apple.com/app/ntfy/id1625396347)) sur ton téléphone.
+3. Dans l'app ntfy, s'abonner à un "topic" unique et difficile à deviner (ex: `mypeugeot-alertes-x7k2p` — n'importe qui connaissant le nom du topic peut voir tes notifs, donc éviter un nom trop simple).
+4. Configurer ce même nom de topic dans l'écran "Alertes" de l'app mobile (ou via `PUT /settings` sur `alert_watcher`, voir ci-dessous).
+
+### API exposée (port `5050`, même réseau Tailscale que `psa_car_controller`)
+- `GET/PUT /settings` — `{ "movement_alert_enabled": bool, "ntfy_topic": string }`
+- `GET/POST /zones` — une zone créée par `POST {"name": "...", "radius_m": 300}` est centrée sur la **dernière position connue de la voiture** (pas de sélecteur de carte : on ajoute une zone en étant garé à l'endroit voulu).
+- `PUT/DELETE /zones/<name>` — modifier (rayon, activer/désactiver) ou supprimer une zone.
+- `GET /health`
+
+### Notes de fiabilité
+- Le sondage ne lit que le **cache local** de `psa_car_controller` (`from_cache=1`, toutes les `ALERT_POLL_SECONDS`, 3 min par défaut) : il n'ajoute pas d'appels à l'API PSA, donc pas de risque de rate-limit supplémentaire. En contrepartie, une alerte ne peut être aussi rapide que la fréquence à laquelle `psa_car_controller` lui-même rafraîchit ses données côté PSA.
+- Aucune alerte n'est envoyée avant le premier cycle de sondage après (re)démarrage (pas encore de point de comparaison), et aucune zone ne peut être créée tant que la position de la voiture n'a pas encore été lue au moins une fois.
+- La détection de mouvement se base sur `ignition.type != "Stop"` : c'est la seule valeur "à l'arrêt" confirmée sur une e-208 réelle ; les autres valeurs (non documentées par PSA) sont traitées comme "en mouvement" par prudence.
+
 ## Où l'héberger en continu (gratuit) : Google Cloud Free Tier
 
 Pour ne pas dépendre d'un PC qui doit rester allumé : une VM **`e2-micro`** sur Google Cloud, gratuite en permanence (pas un essai limité dans le temps).
@@ -51,15 +76,23 @@ Connecte aussi ton téléphone (et éventuellement ton PC) au même réseau Tail
 ```bash
 git clone -b claude/mypeugeot-replacement-app-bv7ct4 https://github.com/allekzx/mypeugeot.git
 cd mypeugeot/backend
-cp .env.example .env
-docker compose up -d
+cp .env.example .env   # puis éditer .env : VIN=... (et ports si besoin)
+docker compose up -d --build
 ```
 Puis refaire la configuration PSA (étape "Configuration initiale" ci-dessus) : elle est propre à cette machine, elle ne se transfère pas automatiquement depuis un précédent test.
+
+**Pour mettre à jour un déploiement existant** (nouveau code, ex: `alert_watcher` ajouté après coup) :
+```bash
+git pull
+docker compose up -d --build
+```
 
 ### 5. Configurer l'app mobile
 Récupère l'IP Tailscale de la VM (`tailscale ip -4` sur la VM), puis lance l'app avec :
 ```bash
-flutter run --dart-define=API_BASE_URL=http://100.x.x.x:5000
+flutter run \
+  --dart-define=API_BASE_URL=http://100.x.x.x:5000 \
+  --dart-define=ALERTS_BASE_URL=http://100.x.x.x:5050
 ```
 
 ### Alternatives

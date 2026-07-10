@@ -9,3 +9,18 @@ services:
       - ./config:/config
     environment:
       - PSACC_CONFIG_DIR=/config
+
+  alert_watcher:
+    build: ./alert_watcher
+    container_name: alert_watcher
+    restart: unless-stopped
+    depends_on:
+      - psa_car_controller
+    ports:
+      - "${ALERT_WATCHER_PORT:-5050}:5050"
+    volumes:
+      - ./config/alerts:/config
+    environment:
+      - VIN=${VIN}
+      - PSACC_URL=http://psa_car_controller:5000
+      - ALERT_POLL_SECONDS=${ALERT_POLL_SECONDS:-180}

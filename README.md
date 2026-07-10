@@ -63,7 +63,9 @@ Puis ouvrir `http://localhost:5000` pour terminer la configuration (connexion à
 ```bash
 cd mobile
 flutter pub get
-flutter run --dart-define=API_BASE_URL=http://<ip-backend>:5000
+flutter run \
+  --dart-define=API_BASE_URL=http://<ip-backend>:5000 \
+  --dart-define=ALERTS_BASE_URL=http://<ip-backend>:5050
 ```
 
 `android/` et `ios/` sont déjà générés et versionnés dans le dépôt. Voir `mobile/README.md` pour le détail de la structure et de la configuration.
@@ -79,7 +81,6 @@ Backend déployé et testé avec une vraie e-208 (voir `backend/README.md`). Pou
 - [ ] Déployer le backend en continu (Google Cloud `e2-micro` + Tailscale) plutôt que sur un PC local
 - [ ] Confirmer le format de `/vehicles/trips` (encore en mock) et le brancher
 - [ ] Fiabiliser le statut de verrouillage (`doors_state` revenu `null` sur le véhicule de test)
-- [ ] Brancher la programmation de charge et les alertes/géofencing sur le backend (actuellement 100% côté client)
-- [ ] Écran de connexion réel (au lieu du stub) relié au backend
-- [ ] Notifications push (Firebase Cloud Messaging)
+- [x] Brancher la programmation de charge sur le backend
+- [x] Alertes mouvement/géofencing réellement fonctionnelles : service `alert_watcher` côté serveur + notifications push via ntfy.sh (voir `backend/README.md`)
 - [ ] Tester sur simulateur/téléphone réel (non fait dans cet environnement distant, pas d'émulateur disponible)
