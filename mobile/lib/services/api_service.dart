@@ -44,6 +44,13 @@ class ApiService {
     return VehicleStatus.fromJson(vin, jsonDecode(response.body) as Map<String, dynamic>);
   }
 
+  /// Demande à la voiture de se "réveiller" et de pousser un statut à jour
+  /// vers PSA. Sans ça, `get_vehicleinfo?from_cache=0` ne fait que relire le
+  /// dernier statut connu côté serveur PSA — qui ne bouge que quand la
+  /// voiture communique elle-même (contact, charge, etc.) — donc un simple
+  /// rafraîchissement peut sembler "ne rien faire".
+  Future<void> wakeUp(String vin) => _get('/wakeup/$vin');
+
   Future<void> lockDoors(String vin) => _get('/lock_door/$vin/1');
 
   Future<void> unlockDoors(String vin) => _get('/lock_door/$vin/0');

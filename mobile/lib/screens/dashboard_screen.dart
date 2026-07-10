@@ -21,30 +21,124 @@ class _DashboardScreenState extends State<DashboardScreen> {
   final _api = ApiService(useMockData: const bool.fromEnvironment('USE_MOCK_DATA'));
   late Future<VehicleStatus> _statusFuture;
   String? _pendingAction;
+  VehicleStatus? _lastKnownStatus;
+  bool _refreshing = false;
+
+  static const _confirmAttempts = 6;
+  static const _confirmDelay = Duration(seconds: 5);
 
   @override
   void initState() {
     super.initState();
     _statusFuture = _api.fetchStatus(widget.vin);
+    _statusFuture.then((s) {
+      if (mounted) _lastKnownStatus = s;
+    }).catchError((_) {});
   }
 
-  void _refresh() {
-    setState(() {
-      _statusFuture = _api.fetchStatus(widget.vin, forceRefresh: true);
-    });
+  /// Rafraîchit le statut. `get_vehicleinfo?from_cache=0` ne relit que le
+  /// dernier statut connu de PSA — qui ne change que quand la voiture
+  /// communique elle-même (contact, charge…) — donc un simple GET peut
+  /// sembler "ne rien faire" alors que la voiture n'a juste rien transmis de
+  /// neuf. On réveille donc la voiture d'abord, puis on re-sonde le statut
+  /// pendant quelques secondes en attendant une donnée plus récente que la
+  /// précédente (`updated_at` plus tardif).
+  Future<void> _refresh() async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    final baseline = _lastKnownStatus?.updatedAt;
+
+    try {
+      await _api.wakeUp(widget.vin);
+    } catch (_) {
+      // Le réveil peut être refusé/rate-limité par PSA : on tente quand même
+      // de relire le statut serveur ci-dessous.
+    }
+
+    VehicleStatus? latest;
+    for (var attempt = 0; attempt < _confirmAttempts; attempt++) {
+      try {
+        latest = await _api.fetchStatus(widget.vin, forceRefresh: true);
+        if (!mounted) return;
+        setState(() {
+          _statusFuture = Future.value(latest);
+          _lastKnownStatus = latest;
+        });
+        if (baseline == null || latest.updatedAt.isAfter(baseline)) break;
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _statusFuture = Future.error(e));
+        latest = null;
+        break;
+      }
+      if (attempt < _confirmAttempts - 1) await Future.delayed(_confirmDelay);
+    }
+
+    if (!mounted) return;
+    setState(() => _refreshing = false);
+    if (latest != null && baseline != null && !latest.updatedAt.isAfter(baseline)) {
+      showActionFeedback(
+        context,
+        success: true,
+        message: 'Statut relu : la voiture n\'a transmis aucune nouvelle donnée pour l\'instant.',
+      );
+    }
   }
 
-  Future<void> _runAction(String id, String successMessage, Future<void> Function() action) async {
+  /// Envoie une action véhicule. Si [confirmedWhen] est fourni, le spinner
+  /// reste actif au-delà de la simple réponse HTTP 200 : on re-sonde le
+  /// statut réel du véhicule pendant quelques secondes avant d'annoncer un
+  /// succès, car PSA répond parfois 200 sans que la voiture exécute
+  /// réellement la commande (github.com/flobz/psa_car_controller/issues/1162).
+  Future<void> _runAction(
+    String id,
+    String successMessage,
+    Future<void> Function() action, {
+    bool Function(VehicleStatus)? confirmedWhen,
+  }) async {
     setState(() => _pendingAction = id);
     try {
       await action();
-      _refresh();
-      if (mounted) showActionFeedback(context, success: true, message: successMessage);
+      if (confirmedWhen == null) {
+        _refresh();
+        if (mounted) showActionFeedback(context, success: true, message: successMessage);
+      } else {
+        final confirmed = await _waitForConfirmation(confirmedWhen);
+        if (mounted) {
+          showActionFeedback(
+            context,
+            success: confirmed,
+            message: confirmed
+                ? successMessage
+                : 'Commande envoyée mais pas encore confirmée par la voiture. Vérifiez dans quelques instants.',
+          );
+        }
+      }
     } catch (e) {
       if (mounted) showActionFeedback(context, success: false, message: '$e');
     } finally {
       if (mounted) setState(() => _pendingAction = null);
     }
+  }
+
+  /// Re-sonde `get_vehicleinfo` (sans cache) jusqu'à ce que [confirmedWhen]
+  /// soit vrai, ou abandonne après [_confirmAttempts] tentatives.
+  Future<bool> _waitForConfirmation(bool Function(VehicleStatus) confirmedWhen) async {
+    for (var attempt = 0; attempt < _confirmAttempts; attempt++) {
+      await Future.delayed(_confirmDelay);
+      try {
+        final status = await _api.fetchStatus(widget.vin, forceRefresh: true);
+        if (!mounted) return false;
+        setState(() {
+          _statusFuture = Future.value(status);
+          _lastKnownStatus = status;
+        });
+        if (confirmedWhen(status)) return true;
+      } catch (_) {
+        // Erreur transitoire pendant le sondage : on retente au tour suivant.
+      }
+    }
+    return false;
   }
 
   @override
@@ -53,7 +147,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       appBar: AppBar(
         title: const Text('Ma e-208'),
         actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _refresh),
+          IconButton(
+            icon: _refreshing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.goldBright),
+                  )
+                : const Icon(Icons.refresh),
+            onPressed: _refreshing ? null : _refresh,
+          ),
         ],
       ),
       body: FutureBuilder<VehicleStatus>(
@@ -136,19 +239,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   status: status,
                   onLockToggle: () => _runAction(
                     'lock',
-                    status.isLocked ? 'Déverrouillage envoyé.' : 'Verrouillage envoyé.',
+                    // `doors_state` revient toujours `null` sur ce véhicule (cf.
+                    // VehicleStatus._parseLocked) : on ne peut pas vérifier l'état
+                    // réel, donc on ne prétend pas confirmer — juste envoyer.
+                    status.isLocked ? 'Déverrouillage envoyé (non vérifiable).' : 'Verrouillage envoyé (non vérifiable).',
                     () => status.isLocked ? _api.unlockDoors(widget.vin) : _api.lockDoors(widget.vin),
                   ),
                   onPrecondition: () => _runAction(
                     'climate',
-                    'Climatisation demandée.',
+                    'Climatisation activée.',
                     () => _api.preconditionCabin(widget.vin),
+                    confirmedWhen: (s) => s.isPreconditioning == true,
                   ),
-                  onChargeToggle: () => _runAction(
-                    'charge',
-                    status.isCharging ? 'Arrêt de charge envoyé.' : 'Démarrage de charge envoyé.',
-                    () => status.isCharging ? _api.stopCharge(widget.vin) : _api.startCharge(widget.vin),
-                  ),
+                  onChargeToggle: () {
+                    final targetCharging = !status.isCharging;
+                    _runAction(
+                      'charge',
+                      targetCharging ? 'Charge démarrée.' : 'Charge arrêtée.',
+                      () => targetCharging ? _api.startCharge(widget.vin) : _api.stopCharge(widget.vin),
+                      confirmedWhen: (s) => s.isCharging == targetCharging,
+                    );
+                  },
+                  // Le klaxon est une action instantanée : rien à confirmer dans le statut.
                   onHorn: () => _runAction('horn', 'Klaxon envoyé.', () => _api.honk(widget.vin)),
                 ),
               ),
