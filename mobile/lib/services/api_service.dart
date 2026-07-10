@@ -113,6 +113,7 @@ class ApiService {
       rangeKm: 240,
       isLocked: true,
       isCharging: false,
+      isPreconditioning: false,
       updatedAt: DateTime.now(),
       odometerKm: 42894,
       latitude: 48.8584,

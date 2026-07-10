@@ -202,6 +202,7 @@ class _GlassActionTray extends StatelessWidget {
                 child: _ActionTile(
                   icon: status.isLocked ? Icons.lock : Icons.lock_open,
                   label: status.isLocked ? 'Déverrouiller' : 'Verrouiller',
+                  active: !status.isLocked,
                   loading: pendingAction == 'lock',
                   onTap: busy ? null : onLockToggle,
                 ),
@@ -209,7 +210,8 @@ class _GlassActionTray extends StatelessWidget {
               Expanded(
                 child: _ActionTile(
                   icon: Icons.ac_unit,
-                  label: 'Climat.',
+                  label: status.isPreconditioning ? 'Climat. active' : 'Climat.',
+                  active: status.isPreconditioning,
                   loading: pendingAction == 'climate',
                   onTap: busy ? null : onPrecondition,
                 ),
@@ -217,7 +219,8 @@ class _GlassActionTray extends StatelessWidget {
               Expanded(
                 child: _ActionTile(
                   icon: Icons.bolt,
-                  label: 'Charge',
+                  label: status.isCharging ? 'En charge' : 'Charge',
+                  active: status.isCharging,
                   loading: pendingAction == 'charge',
                   onTap: busy ? null : onChargeToggle,
                 ),
@@ -239,12 +242,19 @@ class _GlassActionTray extends StatelessWidget {
 }
 
 class _ActionTile extends StatelessWidget {
-  const _ActionTile({required this.icon, required this.label, required this.onTap, this.loading = false});
+  const _ActionTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.loading = false,
+    this.active = false,
+  });
 
   final IconData icon;
   final String label;
   final VoidCallback? onTap;
   final bool loading;
+  final bool active;
 
   @override
   Widget build(BuildContext context) {
@@ -255,24 +265,40 @@ class _ActionTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 6),
         child: Column(
           children: [
-            Container(
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
               width: 48,
               height: 48,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.03),
+                color: active ? AppColors.goldBright : Colors.white.withOpacity(0.03),
                 borderRadius: BorderRadius.circular(14),
+                border: active ? null : Border.all(color: Colors.white.withOpacity(0.06)),
+                boxShadow: active
+                    ? [BoxShadow(color: AppColors.goldBright.withOpacity(0.45), blurRadius: 12)]
+                    : null,
               ),
               child: loading
-                  ? const SizedBox(
+                  ? SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.goldBright),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: active ? AppColors.background : AppColors.goldBright,
+                      ),
                     )
-                  : Icon(icon, size: 19, color: AppColors.goldBright),
+                  : Icon(icon, size: 19, color: active ? AppColors.background : AppColors.goldBright),
             ),
             const SizedBox(height: 7),
-            Text(label, style: const TextStyle(fontSize: 10, color: AppColors.ash), textAlign: TextAlign.center),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: active ? FontWeight.w700 : FontWeight.w400,
+                color: active ? AppColors.goldBright : AppColors.ash,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),

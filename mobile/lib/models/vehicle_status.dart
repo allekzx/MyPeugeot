@@ -9,6 +9,7 @@ class VehicleStatus {
   final double? latitude;
   final double? longitude;
   final DateTime? positionUpdatedAt;
+  final bool isPreconditioning;
 
   const VehicleStatus({
     required this.vin,
@@ -21,6 +22,7 @@ class VehicleStatus {
     this.latitude,
     this.longitude,
     this.positionUpdatedAt,
+    this.isPreconditioning = false,
   });
 
   bool get hasPosition => latitude != null && longitude != null;
@@ -54,6 +56,10 @@ class VehicleStatus {
     final coordinates = geometry?['coordinates'] as List<dynamic>?;
     final positionProps = position?['properties'] as Map<String, dynamic>?;
 
+    final precond = json['preconditionning'] as Map<String, dynamic>?;
+    final airConditioning = precond?['air_conditioning'] as Map<String, dynamic>?;
+    final airConditioningStatus = (airConditioning?['status'] as String?)?.toLowerCase();
+
     return VehicleStatus(
       vin: vin,
       batteryLevelPercent: (electric?['level'] as num?)?.round() ?? 0,
@@ -65,6 +71,7 @@ class VehicleStatus {
       longitude: coordinates != null && coordinates.isNotEmpty ? (coordinates[0] as num?)?.toDouble() : null,
       latitude: coordinates != null && coordinates.length > 1 ? (coordinates[1] as num?)?.toDouble() : null,
       positionUpdatedAt: DateTime.tryParse((positionProps?['updated_at'] as String?) ?? ''),
+      isPreconditioning: airConditioningStatus == 'enabled' || airConditioningStatus == 'inprogress',
     );
   }
 

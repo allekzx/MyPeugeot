@@ -69,5 +69,16 @@ void main() {
     expect(status.longitude, 2.2945);
     expect(status.latitude, 48.8584);
     expect(status.positionUpdatedAt, DateTime.parse('2026-06-08 16:50:01+00:00'));
+    expect(status.isPreconditioning, isFalse); // "Disabled" dans le payload
+  });
+
+  test('détecte le préconditionnement actif', () {
+    final json = {
+      "preconditionning": {
+        "air_conditioning": {"status": "Enabled"}
+      },
+    };
+    final status = VehicleStatus.fromJson('VIN', json);
+    expect(status.isPreconditioning, isTrue);
   });
 }
