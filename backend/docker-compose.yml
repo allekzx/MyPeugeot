@@ -9,6 +9,13 @@ services:
       - ./config:/config
     environment:
       - PSACC_CONFIG_DIR=/config
+      # -R <minutes> : rafraîchissement périodique natif de psa_car_controller.
+      # Nécessaire pour que la surveillance de seuil de charge (%) et d'heure
+      # d'arrêt (ChargeControl.process, déclenché à chaque rafraîchissement)
+      # s'exécute réellement en arrière-plan — sans ça, ce seuil ne se
+      # vérifie que quand quelque chose déclenche une lecture live
+      # (from_cache=0), ce qui n'arrive pas tout seul.
+      - PSACC_OPTIONS=-R ${PSACC_REFRESH_MINUTES:-15}
 
   alert_watcher:
     build: ./alert_watcher

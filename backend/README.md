@@ -16,6 +16,12 @@ docker compose logs -f   # vérifier que le service démarre correctement
 2. Suivre les instructions du projet `psa_car_controller` pour créer une app développeur PSA (client_id/client_secret) et se connecter avec ton compte PSA/Stellantis. Ces identifiants sont stockés uniquement côté serveur, dans `backend/config/` (jamais dans l'app mobile).
 3. Une fois configuré, récupérer le VIN de ta e-208 depuis le dashboard : c'est l'identifiant utilisé pour les appels à l'API véhicule.
 
+## Rafraîchissement automatique (nécessaire pour la programmation de charge)
+
+`psa_car_controller` ne rafraîchit le statut du véhicule en arrière-plan que si on le lui demande explicitement (option `-R <minutes>`, passée via la variable d'environnement `PSACC_OPTIONS` dans `docker-compose.yml`, déjà configurée par défaut à 15 min). C'est ce rafraîchissement périodique qui déclenche la vraie surveillance du **seuil de charge en %** et de l'**heure d'arrêt** (`ChargeControl.process`, dans le code de `psa_car_controller`) — sans lui, régler un seuil à 80% dans l'app ne sert à rien tant que rien d'autre ne déclenche une lecture live du véhicule.
+
+Ajuste `PSACC_REFRESH_MINUTES` dans `.env` si besoin (plus bas = plus réactif pour couper la charge au bon moment, mais plus d'appels à l'API PSA — risque de rate-limit si trop agressif).
+
 ## Alertes mouvement / géofencing (`alert_watcher`)
 
 Un second petit service, `alert_watcher`, tourne à côté de `psa_car_controller` (même VM, même `docker compose up`) et surveille en continu le statut de la voiture pour détecter :
