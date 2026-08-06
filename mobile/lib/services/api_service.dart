@@ -15,6 +15,9 @@ import '../models/vehicle_status.dart';
 ///   - GET /lock_door/<vin>/<0|1>
 ///   - GET /charge_now/<vin>/<0|1>
 ///   - GET /preconditioning/<vin>/<0|1>
+///   - GET /lights/<vin>/<duration_secondes>
+///   - GET /charge_control?vin=&hour=&minute=&percentage= (seuil d'arrêt %, côté serveur)
+///   - GET /charge_hour?vin=&hour=&minute= (heure de démarrage, native véhicule)
 ///   - GET /vehicles/trips (pas de vin dans l'URL, à confirmer si filtré côté
 ///     serveur ou s'il faut filtrer côté client)
 ///
@@ -61,7 +64,12 @@ class ApiService {
 
   Future<void> preconditionCabin(String vin) => _get('/preconditioning/$vin/1');
 
+  Future<void> stopPreconditionCabin(String vin) => _get('/preconditioning/$vin/0');
+
   Future<void> honk(String vin) => _get('/horn/$vin/1');
+
+  Future<void> flashLights(String vin, {int durationSeconds = 5}) =>
+      _get('/lights/$vin/$durationSeconds');
 
   Future<void> updateChargeControl(
     String vin, {
@@ -71,13 +79,22 @@ class ApiService {
   }) =>
       _get('/charge_control?vin=$vin&hour=$hour&minute=$minute&percentage=$percentage');
 
+  /// Programme l'heure de démarrage de charge directement dans la voiture
+  /// (native PSA, via `remote_client.change_charge_hour`) — contrairement à
+  /// `updateChargeControl` qui pilote un seuil d'arrêt en % *côté serveur*
+  /// (psa_car_controller doit tourner et surveiller pour l'appliquer), le
+  /// démarrage programmé ici est géré nativement par le véhicule, donc plus
+  /// fiable (visible dans le payload réel sous `next_delayed_time`).
+  Future<void> updateChargeHour(String vin, {required int hour, required int minute}) =>
+      _get('/charge_hour?vin=$vin&hour=$hour&minute=$minute');
+
   Future<List<Trip>> fetchTrips(String vin) async {
     if (useMockData) {
       return _mockTrips();
     }
-    // TODO: /vehicles/trips ne prend pas de vin dans les routes trouvées ;
-    // à vérifier si un filtrage par véhicule est nécessaire côté client une
-    // fois qu'on a un exemple réel de réponse.
+    // /vehicles/trips ne prend pas de vin dans l'URL (confirmé : le backend
+    // ne gère qu'un seul véhicule à la fois côté serveur). Réponse réelle
+    // confirmée : liste JSON directe (voir Trip.fromJson).
     final response = await http.get(Uri.parse('$baseUrl/vehicles/trips'));
     if (response.statusCode != 200) {
       throw ApiException('Échec de récupération des trajets (${response.statusCode})');
@@ -132,10 +149,10 @@ class ApiService {
   List<Trip> _mockTrips() {
     final now = DateTime.now();
     return [
-      Trip(date: now.subtract(const Duration(days: 1)), distanceKm: 18.4, consumptionKwh: 3.1, costEuros: 0.65),
-      Trip(date: now.subtract(const Duration(days: 2)), distanceKm: 42.0, consumptionKwh: 7.6, costEuros: 1.60),
-      Trip(date: now.subtract(const Duration(days: 4)), distanceKm: 9.2, consumptionKwh: 1.8, costEuros: 0.38),
-      Trip(date: now.subtract(const Duration(days: 6)), distanceKm: 63.5, consumptionKwh: 11.2, costEuros: 2.35),
+      Trip(date: now.subtract(const Duration(days: 1)), distanceKm: 18.4, consumptionKwh: 3.1, durationMinutes: 22),
+      Trip(date: now.subtract(const Duration(days: 2)), distanceKm: 42.0, consumptionKwh: 7.6, durationMinutes: 48),
+      Trip(date: now.subtract(const Duration(days: 4)), distanceKm: 9.2, consumptionKwh: 1.8, durationMinutes: 14),
+      Trip(date: now.subtract(const Duration(days: 6)), distanceKm: 63.5, consumptionKwh: 11.2, durationMinutes: 55),
     ];
   }
 }

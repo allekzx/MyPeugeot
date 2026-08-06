@@ -60,21 +60,45 @@ class _TripsScreenState extends State<TripsScreen> {
             return const Center(child: Text('Aucun trajet pour le moment.'));
           }
 
-          final totalCost = trips.fold<double>(0, (sum, t) => sum + t.costEuros);
+          final hasAggregatedTrip = trips.any((t) => t.looksAggregated);
+          final totalKm = trips.fold<double>(0, (sum, t) => sum + t.distanceKm);
           final totalKwh = trips.fold<double>(0, (sum, t) => sum + t.consumptionKwh);
           final chronological = trips.reversed.toList();
 
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              if (hasAggregatedTrip)
+                Card(
+                  color: AppColors.surfaceAlt,
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(Icons.info_outline, size: 18, color: AppColors.ashDim),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'La voiture ne transmet plus sa position GPS, donc les trajets ne peuvent pas être '
+                            'découpés individuellement — la conso affichée ci-dessous n\'est pas fiable tant que '
+                            'ce n\'est pas résolu (vérifie le mode confidentialité de la voiture).',
+                            style: TextStyle(fontSize: 12, color: AppColors.ashDim),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              if (hasAggregatedTrip) const SizedBox(height: 16),
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(18),
                   child: Row(
                     children: [
                       Expanded(child: _SummaryStat(label: 'Trajets', value: '${trips.length}')),
+                      Expanded(child: _SummaryStat(label: 'Distance', value: '${totalKm.toStringAsFixed(0)} km')),
                       Expanded(child: _SummaryStat(label: 'Conso', value: '${totalKwh.toStringAsFixed(1)} kWh')),
-                      Expanded(child: _SummaryStat(label: 'Coût estimé', value: '${totalCost.toStringAsFixed(2)} €')),
                     ],
                   ),
                 ),
@@ -100,11 +124,18 @@ class _TripsScreenState extends State<TripsScreen> {
                 Card(
                   margin: const EdgeInsets.only(bottom: 8),
                   child: ListTile(
-                    leading: const IconBadge(Icons.route),
+                    leading: Icon(
+                      trip.looksAggregated ? Icons.warning_amber_rounded : Icons.route,
+                      color: trip.looksAggregated ? AppColors.ashDim : AppColors.goldBright,
+                    ),
                     title: Text('${trip.distanceKm.toStringAsFixed(1)} km'),
-                    subtitle: Text(_formatDateFr(trip.date)),
+                    subtitle: Text(
+                      trip.looksAggregated
+                          ? '${_formatDateFr(trip.date)} · agrégat non fiable'
+                          : _formatDateFr(trip.date),
+                    ),
                     trailing: Text(
-                      '${trip.costEuros.toStringAsFixed(2)} €\n${trip.consumptionKwh.toStringAsFixed(1)} kWh',
+                      '${trip.consumptionKwh.toStringAsFixed(1)} kWh',
                       textAlign: TextAlign.right,
                       style: const TextStyle(fontFamily: 'monospace', fontSize: 12.5, color: AppColors.paper),
                     ),

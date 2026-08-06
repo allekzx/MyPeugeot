@@ -5,8 +5,13 @@ import '../theme/app_theme.dart';
 import '../widgets/feedback_snackbar.dart';
 import '../widgets/section_label.dart';
 
-/// Programmation de charge : seuil cible + heures creuses, reliée à
-/// `GET /charge_control` (route confirmée côté backend).
+/// Programmation de charge : deux mécanismes distincts côté backend.
+///   - `GET /charge_hour` : programme l'heure de *démarrage* nativement dans
+///     la voiture (visible dans le payload réel sous `next_delayed_time`) —
+///     fiable même si `psa_car_controller` est éteint.
+///   - `GET /charge_control` : seuil d'*arrêt* en % surveillé par
+///     `psa_car_controller` lui-même (PSA n'expose pas ça nativement), donc
+///     seulement actif tant que le service tourne.
 class ChargeScheduleScreen extends StatefulWidget {
   const ChargeScheduleScreen({super.key, required this.vin, this.currentLevelPercent = 74});
 
@@ -44,11 +49,15 @@ class _ChargeScheduleScreenState extends State<ChargeScheduleScreen> {
   Future<void> _save() async {
     setState(() => _saving = true);
     try {
-      final time = _offPeakEnabled ? _startTime : TimeOfDay.now();
+      if (_offPeakEnabled) {
+        // Heure de démarrage : programmation native, gérée par la voiture elle-même.
+        await _api.updateChargeHour(widget.vin, hour: _startTime.hour, minute: _startTime.minute);
+      }
+      // Seuil d'arrêt en % : surveillé côté serveur (PSA ne le propose pas nativement).
       await _api.updateChargeControl(
         widget.vin,
-        hour: time.hour,
-        minute: time.minute,
+        hour: _endTime.hour,
+        minute: _endTime.minute,
         percentage: _targetPercent.round(),
       );
       if (mounted) {

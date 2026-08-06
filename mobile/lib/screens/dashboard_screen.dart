@@ -245,12 +245,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     status.isLocked ? 'Déverrouillage envoyé (non vérifiable).' : 'Verrouillage envoyé (non vérifiable).',
                     () => status.isLocked ? _api.unlockDoors(widget.vin) : _api.lockDoors(widget.vin),
                   ),
-                  onPrecondition: () => _runAction(
-                    'climate',
-                    'Climatisation activée.',
-                    () => _api.preconditionCabin(widget.vin),
-                    confirmedWhen: (s) => s.isPreconditioning == true,
-                  ),
+                  onPrecondition: () {
+                    final targetPreconditioning = !status.isPreconditioning;
+                    _runAction(
+                      'climate',
+                      targetPreconditioning ? 'Climatisation activée.' : 'Climatisation arrêtée.',
+                      () => targetPreconditioning
+                          ? _api.preconditionCabin(widget.vin)
+                          : _api.stopPreconditionCabin(widget.vin),
+                      confirmedWhen: (s) => s.isPreconditioning == targetPreconditioning,
+                    );
+                  },
                   onChargeToggle: () {
                     final targetCharging = !status.isCharging;
                     _runAction(
@@ -260,8 +265,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       confirmedWhen: (s) => s.isCharging == targetCharging,
                     );
                   },
-                  // Le klaxon est une action instantanée : rien à confirmer dans le statut.
+                  // Le klaxon et les phares sont des actions instantanées : rien à confirmer dans le statut.
                   onHorn: () => _runAction('horn', 'Klaxon envoyé.', () => _api.honk(widget.vin)),
+                  onLights: () => _runAction('lights', 'Phares activés.', () => _api.flashLights(widget.vin)),
                 ),
               ),
               Padding(
@@ -284,6 +290,7 @@ class _GlassActionTray extends StatelessWidget {
     required this.onPrecondition,
     required this.onChargeToggle,
     required this.onHorn,
+    required this.onLights,
   });
 
   final String? pendingAction;
@@ -292,6 +299,7 @@ class _GlassActionTray extends StatelessWidget {
   final VoidCallback onPrecondition;
   final VoidCallback onChargeToggle;
   final VoidCallback onHorn;
+  final VoidCallback onLights;
 
   @override
   Widget build(BuildContext context) {
@@ -343,6 +351,14 @@ class _GlassActionTray extends StatelessWidget {
                   label: 'Klaxon',
                   loading: pendingAction == 'horn',
                   onTap: busy ? null : onHorn,
+                ),
+              ),
+              Expanded(
+                child: _ActionTile(
+                  icon: Icons.wb_incandescent_outlined,
+                  label: 'Phares',
+                  loading: pendingAction == 'lights',
+                  onTap: busy ? null : onLights,
                 ),
               ),
             ],
