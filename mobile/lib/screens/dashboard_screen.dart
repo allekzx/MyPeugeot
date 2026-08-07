@@ -24,6 +24,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   VehicleStatus? _lastKnownStatus;
   bool _refreshing = false;
 
+  /// `doors_state` revient toujours `null` sur ce véhicule (cf.
+  /// VehicleStatus._parseLocked, qui retombe donc sur `true` par défaut) : le
+  /// statut serveur ne peut jamais refléter un déverrouillage, donc le
+  /// bouton resterait bloqué sur "Déverrouiller" pour toujours si on se fiait
+  /// à `status.isLocked`. On garde donc notre propre état local, basé sur la
+  /// dernière commande envoyée — c'est une supposition, pas une confirmation
+  /// (d'où le message "non vérifiable" à chaque action).
+  bool _assumedLocked = true;
+
   static const _confirmAttempts = 6;
   static const _confirmDelay = Duration(seconds: 5);
 
@@ -172,7 +181,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           return ListView(
             padding: EdgeInsets.zero,
             children: [
-              HeroPhoto(isLocked: status.isLocked),
+              HeroPhoto(isLocked: _assumedLocked),
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 10, 24, 0),
                 child: Column(
@@ -237,14 +246,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: _GlassActionTray(
                   pendingAction: _pendingAction,
                   status: status,
-                  onLockToggle: () => _runAction(
-                    'lock',
-                    // `doors_state` revient toujours `null` sur ce véhicule (cf.
-                    // VehicleStatus._parseLocked) : on ne peut pas vérifier l'état
-                    // réel, donc on ne prétend pas confirmer — juste envoyer.
-                    status.isLocked ? 'Déverrouillage envoyé (non vérifiable).' : 'Verrouillage envoyé (non vérifiable).',
-                    () => status.isLocked ? _api.unlockDoors(widget.vin) : _api.lockDoors(widget.vin),
-                  ),
+                  assumedLocked: _assumedLocked,
+                  onLockToggle: () {
+                    final targetLocked = !_assumedLocked;
+                    _runAction(
+                      'lock',
+                      // Pas de confirmedWhen : `doors_state` étant toujours `null`,
+                      // on ne peut pas vérifier l'état réel — juste envoyer. Le
+                      // flip de _assumedLocked ci-dessous n'a lieu que si l'appel
+                      // réussit (sinon _runAction attrape l'erreur avant).
+                      targetLocked ? 'Verrouillage envoyé (non vérifiable).' : 'Déverrouillage envoyé (non vérifiable).',
+                      () async {
+                        await (targetLocked ? _api.lockDoors(widget.vin) : _api.unlockDoors(widget.vin));
+                        if (mounted) setState(() => _assumedLocked = targetLocked);
+                      },
+                    );
+                  },
                   onPrecondition: () {
                     final targetPreconditioning = !status.isPreconditioning;
                     _runAction(
@@ -286,6 +303,7 @@ class _GlassActionTray extends StatelessWidget {
   const _GlassActionTray({
     required this.pendingAction,
     required this.status,
+    required this.assumedLocked,
     required this.onLockToggle,
     required this.onPrecondition,
     required this.onChargeToggle,
@@ -295,6 +313,7 @@ class _GlassActionTray extends StatelessWidget {
 
   final String? pendingAction;
   final VehicleStatus status;
+  final bool assumedLocked;
   final VoidCallback onLockToggle;
   final VoidCallback onPrecondition;
   final VoidCallback onChargeToggle;
@@ -320,9 +339,9 @@ class _GlassActionTray extends StatelessWidget {
             children: [
               Expanded(
                 child: _ActionTile(
-                  icon: status.isLocked ? Icons.lock : Icons.lock_open,
-                  label: status.isLocked ? 'Déverrouiller' : 'Verrouiller',
-                  active: !status.isLocked,
+                  icon: assumedLocked ? Icons.lock : Icons.lock_open,
+                  label: assumedLocked ? 'Déverrouiller' : 'Verrouiller',
+                  active: !assumedLocked,
                   loading: pendingAction == 'lock',
                   onTap: busy ? null : onLockToggle,
                 ),
