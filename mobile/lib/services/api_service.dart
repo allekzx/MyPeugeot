@@ -35,12 +35,21 @@ class ApiService {
   final String baseUrl;
   final bool useMockData;
 
+  /// Sans timeout, une requête qui ne reçoit jamais de réponse (coupure
+  /// réseau/Tailscale ponctuelle) laisse le bouton concerné bloqué en
+  /// chargement indéfiniment — vécu en pratique avec le klaxon. Le serveur
+  /// répond normalement en quelques secondes ; 25s laisse une marge large
+  /// avant d'abandonner proprement.
+  static const _requestTimeout = Duration(seconds: 25);
+
   Future<VehicleStatus> fetchStatus(String vin, {bool forceRefresh = false}) async {
     if (useMockData) {
       return _mockStatus(vin);
     }
     final fromCache = forceRefresh ? 0 : 1;
-    final response = await http.get(Uri.parse('$baseUrl/get_vehicleinfo/$vin?from_cache=$fromCache'));
+    final response = await http
+        .get(Uri.parse('$baseUrl/get_vehicleinfo/$vin?from_cache=$fromCache'))
+        .timeout(_requestTimeout, onTimeout: () => throw ApiException('Le serveur ne répond pas (délai dépassé).'));
     if (response.statusCode != 200) {
       throw ApiException('Échec de récupération du statut (${response.statusCode})');
     }
@@ -95,7 +104,9 @@ class ApiService {
     // /vehicles/trips ne prend pas de vin dans l'URL (confirmé : le backend
     // ne gère qu'un seul véhicule à la fois côté serveur). Réponse réelle
     // confirmée : liste JSON directe (voir Trip.fromJson).
-    final response = await http.get(Uri.parse('$baseUrl/vehicles/trips'));
+    final response = await http
+        .get(Uri.parse('$baseUrl/vehicles/trips'))
+        .timeout(_requestTimeout, onTimeout: () => throw ApiException('Le serveur ne répond pas (délai dépassé).'));
     if (response.statusCode != 200) {
       throw ApiException('Échec de récupération des trajets (${response.statusCode})');
     }
@@ -114,7 +125,9 @@ class ApiService {
     if (useMockData) {
       return;
     }
-    final response = await http.get(Uri.parse('$baseUrl$path'));
+    final response = await http
+        .get(Uri.parse('$baseUrl$path'))
+        .timeout(_requestTimeout, onTimeout: () => throw ApiException('Le serveur ne répond pas (délai dépassé).'));
     if (response.statusCode != 200) {
       throw ApiException('Action "$path" échouée (${response.statusCode}) : ${response.body}');
     }
