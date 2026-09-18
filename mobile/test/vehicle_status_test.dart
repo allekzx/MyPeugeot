@@ -3,7 +3,8 @@ import 'package:mypeugeot/models/vehicle_status.dart';
 
 void main() {
   test('parse un vrai payload get_vehicleinfo (e-208)', () {
-    // Exemple réel renvoyé par psa_car_controller pour une e-208.
+    // Exemple de payload renvoyé par psa_car_controller pour une e-208
+    // (valeurs anonymisées, structure conforme à un payload réel).
     final json = {
       "embedded": null,
       "links": {},
@@ -38,7 +39,7 @@ void main() {
       "last_position": {
         "type": "Feature",
         "geometry": {
-          "coordinates": [2.2945, 48.8584, 1093.0],
+          "coordinates": [2.2945, 48.8584, 35.0],
           "type": "Point"
         },
         "properties": {

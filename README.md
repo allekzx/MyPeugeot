@@ -65,7 +65,8 @@ cd mobile
 flutter pub get
 flutter run \
   --dart-define=API_BASE_URL=http://<ip-backend>:5000 \
-  --dart-define=ALERTS_BASE_URL=http://<ip-backend>:5050
+  --dart-define=ALERTS_BASE_URL=http://<ip-backend>:5050 \
+  --dart-define=VEHICLE_VIN=<vin-du-vehicule>
 ```
 
 `android/` et `ios/` sont déjà générés et versionnés dans le dépôt. Voir `mobile/README.md` pour le détail de la structure et de la configuration.

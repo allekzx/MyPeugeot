@@ -11,7 +11,7 @@ import 'trips_screen.dart';
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});
 
-  static const vin = 'FAKEVIN0000000001';
+  static const vin = String.fromEnvironment('VEHICLE_VIN', defaultValue: '');
 
   @override
   State<HomeShell> createState() => _HomeShellState();

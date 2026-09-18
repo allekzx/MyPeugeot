@@ -16,12 +16,15 @@ L'URL du backend (`backend/` du dépôt, déployé sur ton Raspberry Pi/serveur)
 
 Le service d'alertes mouvement/géofencing (`backend/alert_watcher`, port `5050`) est séparé de `psa_car_controller` (port `5000`) : son URL se configure via `--dart-define=ALERTS_BASE_URL=http://<ip-backend>:5050`.
 
+Le VIN du véhicule (`HomeShell.vin`) n'est plus codé en dur dans le dépôt : il se passe au build via `--dart-define=VEHICLE_VIN=<vin>`, pour ne pas exposer l'identifiant du véhicule dans le code source public.
+
 ## Lancer l'app
 
 ```bash
 flutter run \
   --dart-define=API_BASE_URL=http://<ip-backend>:5000 \
-  --dart-define=ALERTS_BASE_URL=http://<ip-backend>:5050
+  --dart-define=ALERTS_BASE_URL=http://<ip-backend>:5050 \
+  --dart-define=VEHICLE_VIN=<vin-du-vehicule>
 ```
 
 ## Structure

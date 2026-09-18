@@ -45,7 +45,7 @@ class ParseVehicleStateTest(unittest.TestCase):
     def test_position_parsed_from_geojson(self):
         payload = {
             "last_position": {
-                "geometry": {"coordinates": [2.2945, 48.8584, 1093.0]},
+                "geometry": {"coordinates": [2.2945, 48.8584, 35.0]},
             }
         }
         _, lat, lon = parse_vehicle_state(payload)
